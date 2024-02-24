@@ -6,7 +6,28 @@ import axios from 'axios';
 
 function App() {
   const [userInput, setUserInput] = useState('');
+  const [labtext, setLabtext] = useState('');
   const [conversation, setConversation] = useState([]);
+  const [isActive, setIsActive] = useState(false);
+
+  const get_answer= async (inputData) => {
+    try{
+      const secondApiUrl = 'http://13.201.134.179:5000/process_pdf';
+      const secondApiResponse = await axios.post(secondApiUrl, {
+      input_query: labtext,
+        user_question: "please analyse this",
+      });
+    
+      const answerMessage = {
+        text: secondApiResponse.data.answer,
+        isUser: false,
+      };
+      setConversation((prevConversation) => [...prevConversation, answerMessage]);
+
+    }catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
 
   const fetchData = async (inputData) => {
     try {
@@ -42,8 +63,14 @@ function App() {
       setConversation([...conversation, userMessage]);
 
       const inputData = { input_query: userInput };
-      fetchData(inputData);
-
+      if(isActive){
+        console.log("isActive ", isActive)
+        get_answer(inputData)
+      }
+      else{
+        console.log("isActive else ", isActive)
+        fetchData(inputData);
+      }
       setUserInput('');
     }
   }
@@ -53,8 +80,10 @@ function App() {
       const file = e.target.files[0];
   
       if (file && file.type.includes('pdf')) {
+        setIsActive(!isActive);
+
         const formData = new FormData();
-        formData.append('pdf', file);
+        formData.append('pdf_file', file);
 
         console.log (formData);
   
@@ -64,10 +93,10 @@ function App() {
             'Content-Type': 'multipart/form-data',
           },
         });
-  
-        const extractedText = response.text;
-
-        console.log (extractedText);
+        console.log("response  " ,response.data.text)
+        const extractedText = response.data.text;
+        setLabtext(extractedText);
+        console.log ("extractedText" ,extractedText);
   
         const pdfMessage = {
           text: `PDF: ${file.name}`,
@@ -76,20 +105,23 @@ function App() {
         setConversation((prevConversation) => [...prevConversation, pdfMessage]);
   
         // Now, make the combined API call with the extracted text and user input
-        const userQuestion = userInput;
-        const secondApiUrl = 'http://13.201.134.179:5000/process_pdf';
-        const secondApiResponse = await axios.post(secondApiUrl, {
-          input_query: extractedText,
-          user_question: userQuestion,
-        });
-  
-        const answerMessage = {
-          text: secondApiResponse.data.answer,
-          isUser: false,
-        };
-  
-        setConversation((prevConversation) => [...prevConversation, answerMessage]);
-        console.log (answerMessage);
+        // const userQuestion = userInput;
+        // console.log("userInput  ",userInput)
+        // if(userInput!=""){
+        //   const secondApiUrl = 'http://13.201.134.179:5000/process_pdf';
+        //   const secondApiResponse = await axios.post(secondApiUrl, {
+        //     input_query: extractedText,
+        //     user_question: "please analyse this",
+        //   });
+    
+        //   const answerMessage = {
+        //     text: secondApiResponse.data.answer,
+        //     isUser: false,
+        //   };
+    
+        //   setConversation((prevConversation) => [...prevConversation, answerMessage]);
+        //   console.log (answerMessage);
+      // }
       } else {
         const errorMessage = {
           text: 'Please upload only PDF files.',
