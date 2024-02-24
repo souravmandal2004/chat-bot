@@ -1,6 +1,6 @@
 import './App.css';
 import { ImAttachment } from "react-icons/im";
-import { IoSend } from "react-icons/io5";
+import { IoSend, IoClose } from "react-icons/io5";
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -9,22 +9,23 @@ function App() {
   const [labtext, setLabtext] = useState('');
   const [conversation, setConversation] = useState([]);
   const [isActive, setIsActive] = useState(false);
+  const [pdfFileName, setPdfFileName] = useState(null);
 
-  const get_answer= async (inputData) => {
-    try{
+  const getAnswer = async (inputData) => {
+    try {
       const secondApiUrl = 'http://13.201.134.179:5000/process_pdf';
       const secondApiResponse = await axios.post(secondApiUrl, {
-      input_query: labtext,
+        input_query: labtext,
         user_question: "please analyse this",
       });
-    
+
       const answerMessage = {
         text: secondApiResponse.data.answer,
         isUser: false,
       };
       setConversation((prevConversation) => [...prevConversation, answerMessage]);
 
-    }catch (error) {
+    } catch (error) {
       console.error('Error fetching data:', error);
     }
   }
@@ -46,9 +47,7 @@ function App() {
 
       setConversation([...conversation, newMessage, botMessage]);
 
-
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error fetching data:', error);
     }
   }
@@ -63,11 +62,10 @@ function App() {
       setConversation([...conversation, userMessage]);
 
       const inputData = { input_query: userInput };
-      if(isActive){
+      if (isActive) {
         console.log("isActive ", isActive)
-        get_answer(inputData)
-      }
-      else{
+        getAnswer(inputData)
+      } else {
         console.log("isActive else ", isActive)
         fetchData(inputData);
       }
@@ -78,50 +76,30 @@ function App() {
   const handleFileChange = async (e) => {
     try {
       const file = e.target.files[0];
-  
+
       if (file && file.type.includes('pdf')) {
         setIsActive(!isActive);
+        setPdfFileName(file.name);
 
         const formData = new FormData();
         formData.append('pdf_file', file);
 
-        console.log (formData);
-  
         const apiUrl = 'http://13.201.134.179:5000/extract_text_from_pdf';
         const response = await axios.post(apiUrl, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
-        console.log("response  " ,response.data.text)
+
         const extractedText = response.data.text;
         setLabtext(extractedText);
-        console.log ("extractedText" ,extractedText);
-  
-        const pdfMessage = {
-          text: `PDF: ${file.name}`,
-          isUser: true,
-        };
-        setConversation((prevConversation) => [...prevConversation, pdfMessage]);
-  
-        // Now, make the combined API call with the extracted text and user input
-        // const userQuestion = userInput;
-        // console.log("userInput  ",userInput)
-        // if(userInput!=""){
-        //   const secondApiUrl = 'http://13.201.134.179:5000/process_pdf';
-        //   const secondApiResponse = await axios.post(secondApiUrl, {
-        //     input_query: extractedText,
-        //     user_question: "please analyse this",
-        //   });
-    
-        //   const answerMessage = {
-        //     text: secondApiResponse.data.answer,
-        //     isUser: false,
-        //   };
-    
-        //   setConversation((prevConversation) => [...prevConversation, answerMessage]);
-        //   console.log (answerMessage);
-      // }
+
+        // const pdfMessage = {
+        //   text: `PDF: ${file.name}`,
+        //   isUser: true,
+        // };
+        // setConversation((prevConversation) => [...prevConversation, pdfMessage]);
+
       } else {
         const errorMessage = {
           text: 'Please upload only PDF files.',
@@ -133,20 +111,23 @@ function App() {
       console.error('Error handling file change:', error);
     }
   }
-  
+
+  const handleRemovePdf = () => {
+    setIsActive(false);
+    setPdfFileName(null);
+    setLabtext('');
+  }
 
   return (
     <div className='flex flex-col gap-8 mb-10 h-screen'>
-
-      {/* Heading  */}
+      {/* Heading */}
       <div className='text-4xl font-bold text-center mt-12 text-blue-900'>
         <h1>
           Welcome to <span className='text-[#034371]'>AiMl Vaidya</span>
         </h1>
       </div>
 
-      {/* Conversation field  */}
-
+      {/* Conversation field */}
       <div className='text-lg font-semibold text-center p-4 rounded-md mx-auto max-w-[800px]' style={{ maxHeight: '100%', overflowY: 'scroll' }}>
         {conversation.map((message, index) => (
           <div key={index} className={`flex flex-row mt-4 justify-start`}>
@@ -162,15 +143,21 @@ function App() {
         ))}
       </div>
 
-      {/* Attach PDF  */}
-
+      {/* Attach PDF */}
       <div className='flex justify-center border-2 max-w-[800px] w-11/12 mx-auto rounded-lg'>
         <div className='flex flex-col w-full'>
-          <div className='flex bg-[#F7F7F7] h-[40px] w-full items-center pl-4 cursor-pointer gap-2 rounded-t-lg'>
-            <label htmlFor='fileInput' className='flex justify-center items-center gap-3 cursor-pointer'>
-              <ImAttachment className="text-blue-500" />
-              <p className="text-sm text-blue-900">Attach pdf</p>
-            </label>
+          <div className='flex bg-[#F7F7F7] h-[40px] w-full items-center pl-4 gap-2 rounded-t-lg'>
+            {pdfFileName ? (
+              <>
+                <p className="text-sm text-blue-900">{pdfFileName}</p>
+                <IoClose className="text-red-500 cursor-pointer ml-2" onClick={handleRemovePdf} />
+              </>
+            ) : (
+              <label htmlFor='fileInput' className='flex justify-center items-center gap-3 cursor-pointer'>
+                <ImAttachment className="text-blue-500" />
+                <p className="text-sm text-blue-900">Attach pdf</p>
+              </label>
+            )}
             <input
               id='fileInput'
               type='file'
@@ -180,8 +167,7 @@ function App() {
             />
           </div>
 
-          {/* Input field  */}
-
+          {/* Input field */}
           <div className='flex flex-row justify-between bg-white rounded-b-lg'>
             <input
               type='text'
@@ -196,8 +182,7 @@ function App() {
               }}
             />
 
-            {/* send button  */}
-
+            {/* send button */}
             <div className='flex items-center pr-3'>
               <IoSend onClick={handleSend} className="cursor-pointer h-8 w-8 text-blue-500" />
             </div>
