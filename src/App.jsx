@@ -25,8 +25,9 @@ function App() {
       };
       setConversation((prevConversation) => [...prevConversation, answerMessage]);
 
-    } catch (error) {
-      console.error('Error fetching data:', error);
+    } 
+    catch (error) {
+      console.error('Error fetching data:', error.message);
     }
   }
 
@@ -40,6 +41,7 @@ function App() {
         isUser: true,
       };
 
+
       const botMessage = {
         text: response.data.answer,
         isUser: false,
@@ -47,8 +49,9 @@ function App() {
 
       setConversation([...conversation, newMessage, botMessage]);
 
-    } catch (error) {
-      console.error('Error fetching data:', error);
+    } 
+    catch (error) {
+      console.error('Error fetching data:', error.message);
     }
   }
 
@@ -66,7 +69,7 @@ function App() {
         console.log("isActive ", isActive)
         getAnswer(inputData)
       } else {
-        console.log("isActive else ", isActive)
+        console.log("isActive ", isActive)
         fetchData(inputData);
       }
       setUserInput('');
@@ -94,12 +97,6 @@ function App() {
         const extractedText = response.data.text;
         setLabtext(extractedText);
 
-        // const pdfMessage = {
-        //   text: `PDF: ${file.name}`,
-        //   isUser: true,
-        // };
-        // setConversation((prevConversation) => [...prevConversation, pdfMessage]);
-
       } else {
         const errorMessage = {
           text: 'Please upload only PDF files.',
@@ -119,7 +116,7 @@ function App() {
   }
 
   return (
-    <div className='flex flex-col gap-8 mb-10 h-screen'>
+    <div className='flex flex-col gap-8 mb-10 min-h-screen '>
       {/* Heading */}
       <div className='text-4xl font-bold text-center mt-12 text-blue-900'>
         <h1>
@@ -128,7 +125,7 @@ function App() {
       </div>
 
       {/* Conversation field */}
-      <div className='text-lg font-semibold text-center p-4 rounded-md mx-auto max-w-[800px]' style={{ maxHeight: '100%', overflowY: 'scroll' }}>
+      <div className='text-lg font-semibold text-center mx-10 p-4 rounded-md overflow-y-auto max-h-96'>
         {conversation.map((message, index) => (
           <div key={index} className={`flex flex-row mt-4 justify-start`}>
             <div className={`p-2 rounded-lg shadow-md ${message.isUser ? "bg-slate-200" : "bg-blue-200"}`}>
@@ -143,9 +140,33 @@ function App() {
         ))}
       </div>
 
-      {/* Attach PDF */}
-      <div className='flex justify-center border-2 max-w-[800px] w-11/12 mx-auto rounded-lg'>
+     
+      <div className='flex justify-center border-2  mx-10  rounded-lg'>
         <div className='flex flex-col w-full'>
+          
+          {/* Input field */}
+          <div className='flex flex-row justify-between w-full bg-white rounded-b-lg'>
+            <input
+              type='text'
+              placeholder='Medical problems only...'
+              className='outline-none flex-grow py-6 px-4 rounded-l-lg text-blue-900'
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSend();
+                }
+              }}
+            />
+
+              {/* send button */}
+              <div className='flex items-center pr-3'>
+                <IoSend onClick={handleSend} className="cursor-pointer h-8 w-8 text-blue-500" />
+              </div>
+          </div>
+
+           {/* Attach PDF */}
+
           <div className='flex bg-[#F7F7F7] h-[40px] w-full items-center pl-4 gap-2 rounded-t-lg'>
             {pdfFileName ? (
               <>
@@ -165,27 +186,6 @@ function App() {
               style={{ display: 'none' }}
               onChange={handleFileChange}
             />
-          </div>
-
-          {/* Input field */}
-          <div className='flex flex-row justify-between bg-white rounded-b-lg'>
-            <input
-              type='text'
-              placeholder='Medical problems only...'
-              className='outline-none flex-grow py-3 px-4 rounded-l-lg text-blue-900'
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSend();
-                }
-              }}
-            />
-
-            {/* send button */}
-            <div className='flex items-center pr-3'>
-              <IoSend onClick={handleSend} className="cursor-pointer h-8 w-8 text-blue-500" />
-            </div>
           </div>
         </div>
       </div>
